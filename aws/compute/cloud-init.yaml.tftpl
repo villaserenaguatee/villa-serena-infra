@@ -3,12 +3,7 @@ package_update: true
 packages:
   - ca-certificates
   - curl
-  - gnupg
-  - unzip
   - awscli
-  - docker.io
-  - docker-compose
-  - jq
 
 write_files:
   - path: /usr/local/sbin/villa-serena-start-tunnel
@@ -38,7 +33,6 @@ write_files:
 
 runcmd:
   - [bash, -lc, 'set -eu; curl -fsSL https://s3.${aws_region}.amazonaws.com/amazon-ssm-${aws_region}/latest/debian_arm64/amazon-ssm-agent.deb -o /tmp/amazon-ssm-agent.deb; dpkg -i /tmp/amazon-ssm-agent.deb; systemctl enable --now amazon-ssm-agent']
-  - [bash, -lc, 'systemctl enable --now docker']
   - [bash, -lc, 'set -eu; curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64 -o /usr/local/bin/cloudflared; chmod 0755 /usr/local/bin/cloudflared']
 %{ if enable_cloudflared ~}
   - [bash, -lc, 'systemctl daemon-reload; systemctl enable --now cloudflared']
