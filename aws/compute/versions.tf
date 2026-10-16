@@ -8,9 +8,9 @@ terraform {
   }
   backend "s3" {
     profile = "r2-terraform"
-    bucket = "villa-serena-terraform-state"
-    key    = "aws/compute/terraform.tfstate"
-    region = "auto"
+    bucket  = "villa-serena-terraform-state"
+    key     = "aws/compute/terraform.tfstate"
+    region  = "auto"
     endpoints = {
       s3 = "https://cb137b9c4110407eeed3317b9d2579b3.r2.cloudflarestorage.com"
     }
