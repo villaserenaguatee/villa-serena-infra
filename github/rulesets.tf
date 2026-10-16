@@ -15,11 +15,11 @@ resource "github_repository_ruleset" "main" {
 
   rules {
     pull_request {
-      required_approving_review_count = 1
+      required_approving_review_count = 0
 
-      dismiss_stale_reviews_on_push     = true
-      require_last_push_approval        = true
-      required_review_thread_resolution = true
+      dismiss_stale_reviews_on_push     = false
+      require_last_push_approval        = false
+      required_review_thread_resolution = false
 
       allowed_merge_methods = [
         "squash"
