@@ -40,7 +40,7 @@ Do not commit the keys or Terraform local cache / plan files to Git.
 Keep credentials for the AWS provider separate from R2 credentials.
 
 ```bash
-cd terraform/aws/identity
+cd aws/identity
 terraform init
 terraform fmt -check
 terraform validate
