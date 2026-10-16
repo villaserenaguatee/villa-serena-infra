@@ -8,7 +8,7 @@ variable "instance_type" {
 }
 variable "root_volume_size" {
   type    = number
-  default = 30
+  default = 20
 }
 variable "cloudflare_tunnel_parameter_name" {
   description = "Name of a SecureString created separately (token is never stored in Terraform state)."
