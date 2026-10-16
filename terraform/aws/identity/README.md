@@ -31,32 +31,25 @@ added when the instance and command document are defined.
 
 ## R2 backend setup
 
-The backend is deliberately **partially configured**. Copy `r2.tfbackend.example`
-to a **private location outside the repository**, set the R2 endpoint and
-backend credentials there, and keep that file out of version control.
-This prevents R2 credentials from accidentally replacing AWS provider
-credentials. Backend credentials may still be cached locally under
-`.terraform/` or inside Terraform plan files: secure those artifacts.
+The existing Cloudflare R2 bucket and endpoint are configured in `backend.tf`.
+The identity stack uses `aws/identity/terraform.tfstate`, **not** the
+existing `github/terraform.tfstate`.
 
-Use a separate authenticated AWS profile (or AWS SSO / temporary AWS
-credentials) for the AWS provider; the R2 credentials are only for the
-state backend.
+Provide **R2-only** access key credentials for the backend securely.
+Do not commit the keys or Terraform local cache / plan files to Git.
+Keep credentials for the AWS provider separate from R2 credentials.
 
 ```bash
 cd terraform/aws/identity
-terraform init -backend-config=/private/path/r2.tfbackend
+terraform init
 terraform fmt -check
 terraform validate
 terraform plan -var='aws_region=us-east-1'
 ```
 
-Do not use `-migrate-state` or `-force-copy` to reuse the existing GitHub
-state. This identity stack must start with its own empty state. Check
-whether the GitHub OIDC provider already exists in the target AWS account
-before applying; if it does, import it into this **new** state.
-
-R2 S3 endpoint configuration follows the Cloudflare Terraform backend
-guide: https://developers.cloudflare.com/terraform/advanced-topics/remote-backend/
+Do not migrate or force-copy the GitHub state. This identity stack starts
+with an independent state key. Import an existing GitHub OIDC IAM provider
+if your AWS account already has one.
 
 The region in that example is only illustrative; select the actual AWS
 region before planning. Review the plan before any `terraform apply`.
