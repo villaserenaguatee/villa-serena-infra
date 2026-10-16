@@ -2,3 +2,6 @@
 *.tfstate
 *.tfstate.*
 .terraform/
+
+# Secretos locales (documento 14, sección 6)
+.env
