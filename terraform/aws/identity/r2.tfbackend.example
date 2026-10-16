@@ -1,0 +1,8 @@
+# Copy to a private file OUTSIDE the repository, then provide to:
+# terraform init -backend-config=/absolute/path/to/r2.tfbackend
+# WARNING: backend credentials can be cached in .terraform/ and plan files.
+endpoints = {
+  s3 = "https://YOUR_CLOUDFLARE_ACCOUNT_ID.r2.cloudflarestorage.com"
+}
+# access_key = "YOUR_R2_ACCESS_KEY"
+# secret_key = "YOUR_R2_SECRET_KEY"
