@@ -6,11 +6,12 @@ Security Group through their stable names.
 
 - EC2 `t4g.small` (ARM64) using the latest official Debian 13 image
   published by owner `136693071363`
-- 30 GB encrypted gp3 root EBS, retained on termination
+- 20 GB encrypted gp3 root EBS, retained on termination
 - IMDSv2 mandatory, hop limit 2, public dynamic IPv4
 - No SSH key; `AmazonSSMManagedInstanceCore` attached to instance role
-- cloud-init installs SSM Agent (not preinstalled on Debian), Docker and
-  cloudflared. Application containers are NOT deployed.
+- cloud-init installs SSM Agent (not preinstalled on Debian) and
+  cloudflared. Docker/Compose and application containers are intentionally
+  excluded; Ansible will manage them separately.
 - Cloudflare tunnel token expected as an existing SSM `SecureString`,
   read by the instance role only; no token value enters Terraform state.
 - Tunnel service defaults to disabled until the token is created externally
@@ -19,7 +20,7 @@ Security Group through their stable names.
 - Independent Cloudflare R2 state key: `aws/compute/terraform.tfstate`.
 
 **Review points:** IAM minimum permissions, correct region, AMI match,
-bootstrap package availability on Debian 13, cloudflared download URL,
+SSM Agent bootstrap on Debian 13, cloudflared download URL,
 Cloudflare Tunnel token existence, and external data backups. Retaining
 root EBS on termination avoids accidental deletion but will continue
 incurring charges and requires cleanup/recovery management.
