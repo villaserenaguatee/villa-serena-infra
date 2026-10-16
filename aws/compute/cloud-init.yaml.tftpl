@@ -1,0 +1,41 @@
+#cloud-config
+package_update: true
+packages:
+  - ca-certificates
+  - curl
+  - awscli
+
+write_files:
+  - path: /usr/local/sbin/villa-serena-start-tunnel
+    permissions: "0700"
+    owner: root:root
+    content: |
+      #!/bin/sh
+      set -eu
+      umask 077
+      mkdir -p /etc/cloudflared
+      aws ssm get-parameter --region "${aws_region}" --name "${cloudflare_param}" --with-decryption --query Parameter.Value --output text > /etc/cloudflared/tunnel-token
+      exec /usr/local/bin/cloudflared tunnel --no-autoupdate run --token-file /etc/cloudflared/tunnel-token
+  - path: /etc/systemd/system/cloudflared.service
+    permissions: "0644"
+    content: |
+      [Unit]
+      Description=Cloudflare Tunnel
+      After=network-online.target
+      Wants=network-online.target
+      [Service]
+      Type=simple
+      ExecStart=/usr/local/sbin/villa-serena-start-tunnel
+      Restart=always
+      RestartSec=20
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - [bash, -lc, 'set -eu; curl -fsSL https://s3.${aws_region}.amazonaws.com/amazon-ssm-${aws_region}/latest/debian_arm64/amazon-ssm-agent.deb -o /tmp/amazon-ssm-agent.deb; dpkg -i /tmp/amazon-ssm-agent.deb; systemctl enable --now amazon-ssm-agent']
+  - [bash, -lc, 'set -eu; curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64 -o /usr/local/bin/cloudflared; chmod 0755 /usr/local/bin/cloudflared']
+%{ if enable_cloudflared ~}
+  - [bash, -lc, 'systemctl daemon-reload; systemctl enable --now cloudflared']
+%{ else ~}
+  - [bash, -lc, 'systemctl daemon-reload; systemctl disable cloudflared || true']
+%{ endif ~}
