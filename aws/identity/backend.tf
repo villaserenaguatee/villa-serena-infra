@@ -1,5 +1,6 @@
 terraform {
   backend "s3" {
+    profile = "r2-terraform"
     bucket = "villa-serena-terraform-state"
     key    = "aws/identity/terraform.tfstate"
 
