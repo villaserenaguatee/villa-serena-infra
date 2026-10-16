@@ -1,0 +1,41 @@
+name: Terraform Networking Validation
+
+on:
+  pull_request:
+    paths:
+      - "aws/networking/**"
+      - ".github/workflows/terraform-networking-validate.yml"
+  push:
+    branches: [main]
+    paths:
+      - "aws/networking/**"
+      - ".github/workflows/terraform-networking-validate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Format and validate networking
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aws/networking
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.13.4"
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive -diff
+
+      - name: Initialize providers without remote backend
+        run: terraform init -backend=false -input=false
+
+      - name: Validate Terraform configuration
+        run: terraform validate -no-color
