@@ -11,3 +11,8 @@ output "infra_ansible_role_arn" {
   description = "Role assumed by the villa-serena-infra workflow for SSM-based Ansible."
   value       = aws_iam_role.infra_ansible.arn
 }
+
+output "ansible_ssm_transfer_bucket" {
+  description = "Use as the AWS_SSM_TRANSFER_BUCKET Actions variable for Ansible."
+  value       = aws_s3_bucket.ansible_transfer.bucket
+}
