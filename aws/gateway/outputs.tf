@@ -18,3 +18,8 @@ output "cloud_map_service_arn" {
 output "registered_backend_private_ip" {
   value = data.aws_instance.app.private_ip
 }
+
+output "custom_api_url" {
+  description = "Stable public HTTPS API endpoint after ACM and DNS validation."
+  value       = "https://${aws_apigatewayv2_domain_name.api.domain_name}"
+}
