@@ -1,0 +1,133 @@
+---
+- name: Bootstrap Villa Serena Debian 13 application host
+  hosts: all
+  become: true
+  gather_facts: true
+  vars:
+    swap_size_mib: 2048
+    swap_path: /swapfile
+    docker_apt_arch: arm64
+  tasks:
+    - name: Require Debian 13 ARM64
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == 'Debian'
+          - ansible_distribution_major_version == '13'
+          - ansible_architecture == 'aarch64'
+        fail_msg: "This playbook only supports the Villa Serena Debian 13 ARM64 instance."
+
+    - name: Install prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - python3-debian
+        state: present
+        update_cache: true
+
+    - name: Check existing swap file
+      ansible.builtin.stat:
+        path: "{{ swap_path }}"
+      register: swap_stat
+
+    - name: Allocate a 2 GiB swap file
+      ansible.builtin.command:
+        cmd: "fallocate -l {{ swap_size_mib }}M {{ swap_path }}"
+      when: not swap_stat.stat.exists
+      changed_when: true
+
+    - name: Restrict swap file permissions
+      ansible.builtin.file:
+        path: "{{ swap_path }}"
+        owner: root
+        group: root
+        mode: "0600"
+        state: file
+
+    - name: Check swap signature
+      ansible.builtin.command:
+        cmd: "blkid -p -o value -s TYPE {{ swap_path }}"
+      register: swap_signature
+      changed_when: false
+      failed_when: false
+
+    - name: Initialize swap signature when missing
+      ansible.builtin.command:
+        cmd: "mkswap {{ swap_path }}"
+      when: swap_signature.stdout | trim != 'swap'
+      changed_when: true
+
+    - name: Activate swap on boot
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '^/swapfile\s'
+        line: '/swapfile none swap sw 0 0'
+        state: present
+
+    - name: Read enabled swap devices
+      ansible.builtin.command:
+        cmd: swapon --show=NAME --noheadings
+      register: current_swap
+      changed_when: false
+
+    - name: Enable swap immediately
+      ansible.builtin.command:
+        cmd: "swapon {{ swap_path }}"
+      when: swap_path not in current_swap.stdout_lines
+      changed_when: true
+
+    - name: Set moderate swap pressure
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/99-villa-serena-swap.conf
+        content: "vm.swappiness = 10\n"
+        owner: root
+        group: root
+        mode: "0644"
+      register: swap_sysctl
+
+    - name: Apply swap tuning
+      ansible.builtin.command:
+        cmd: sysctl --system
+      when: swap_sysctl.changed
+      changed_when: true
+
+    - name: Create Docker keyring directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Download Docker repository signing key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/debian/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Configure official Docker apt repository
+      ansible.builtin.deb822_repository:
+        name: docker
+        types: [deb]
+        uris: https://download.docker.com/linux/debian
+        suites: [trixie]
+        components: [stable]
+        architectures: ["{{ docker_apt_arch }}"]
+        signed_by: /etc/apt/keyrings/docker.asc
+        state: present
+
+    - name: Install Docker Engine and Compose plugin
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Enable and start Docker
+      ansible.builtin.systemd_service:
+        name: docker
+        enabled: true
+        state: started
