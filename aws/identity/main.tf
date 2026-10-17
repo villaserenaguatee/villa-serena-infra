@@ -115,7 +115,7 @@ data "aws_iam_policy_document" "infra_ansible_ssm" {
   statement {
     sid       = "ManageOwnSessions"
     actions   = ["ssm:TerminateSession", "ssm:ResumeSession"]
-    resources = ["arn:${data.aws_partition.current.partition}:ssm:*:${data.aws_caller_identity.current.account_id}:session/${aws:userid}-*"]
+    resources = ["arn:${data.aws_partition.current.partition}:ssm:*:${data.aws_caller_identity.current.account_id}:session/$${aws:userid}-*"]
   }
 
   statement {
