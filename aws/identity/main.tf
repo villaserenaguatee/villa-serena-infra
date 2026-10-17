@@ -109,7 +109,7 @@ data "aws_iam_policy_document" "infra_ansible_ssm" {
   statement {
     sid       = "UseSessionManagerShell"
     actions   = ["ssm:StartSession"]
-    resources = ["arn:${data.aws_partition.current.partition}:ssm:${var.aws_region}::document/SSM-SessionManagerRunShell"]
+    resources = ["arn:${data.aws_partition.current.partition}:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:document/SSM-SessionManagerRunShell"]
   }
 
   statement {
