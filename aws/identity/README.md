@@ -1,8 +1,9 @@
 # AWS IAM identity — Villa Serena
 
-This Terraform root configures **only** GitHub Actions federation and the
-`villa-serena-api-deploy-role`. It does not create EC2, VPC, or deployment
-permissions yet.
+This Terraform root configures GitHub Actions OIDC and **two separate roles**:
+`villa-serena-api-deploy-role` (future API deployments, no permissions yet)
+and `villa-serena-infra-ansible-role` (SSM access for server configuration).
+It does not create EC2 or VPC.
 
 ## Trust boundary
 
@@ -13,8 +14,13 @@ permissions yet.
 - Immutable repo ID: `1389591619`
 - Authorized branch: `main` (configurable with `deployment_branch`)
 
-The role has **no AWS permissions attached yet**. SSM permissions will be
-added when the instance and command document are defined.
+The API deployment role has **no AWS permissions attached yet**.
+The infrastructure Ansible role can open SSM sessions to instances tagged
+`Name=villa-serena-prod-app` and inspect the EC2/SSM inventory. The `aws_ssm`
+connection plugin also requires a dedicated S3 transfer bucket, which this
+PR does **not** create or authorize yet. Do not run Ansible until this is
+configured. The trust policy assumes a `main` branch workflow without a
+GitHub Environment subject override.
 
 ## Before applying
 
