@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: villa_serena
+      POSTGRES_DB: villa_serena
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - /opt/villa-serena/secrets/pg_password:/run/secrets/pg_password:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U villa_serena -d villa_serena"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
+    # Deliberately no ports section: no host/public port 5432.
+
+volumes:
+  pgdata:
+
+networks:
+  backend:
+    external: true
+    name: villa-serena-backend

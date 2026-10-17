@@ -1,0 +1,94 @@
+---
+- name: Provision Villa Serena PostgreSQL 17
+  hosts: all
+  become: true
+  gather_facts: false
+  vars:
+    postgres_dir: /opt/villa-serena/postgres
+    postgres_secret_path: /opt/villa-serena/secrets/pg_password
+    postgres_parameter: /villa-serena/prod/postgres/password
+    postgres_aws_region: us-east-1
+  tasks:
+    - name: Ensure Docker is operational
+      ansible.builtin.command: docker info --format '{{ "{{" }}.ServerVersion{{ "}}" }}'
+      changed_when: false
+
+    - name: Create application directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+      loop:
+        - "{{ postgres_dir }}"
+        - /opt/villa-serena/secrets
+
+    - name: Retrieve database password from SSM Parameter Store
+      ansible.builtin.command:
+        argv:
+          - aws
+          - ssm
+          - get-parameter
+          - --name
+          - "{{ postgres_parameter }}"
+          - --with-decryption
+          - --query
+          - Parameter.Value
+          - --output
+          - text
+          - --region
+          - "{{ postgres_aws_region }}"
+      register: postgres_password
+      changed_when: false
+      no_log: true
+
+    - name: Ensure secret was retrieved
+      ansible.builtin.assert:
+        that:
+          - postgres_password.stdout | length >= 16
+        fail_msg: "The SSM password must have at least 16 characters."
+      no_log: true
+
+    - name: Write database password to root-only file
+      ansible.builtin.copy:
+        dest: "{{ postgres_secret_path }}"
+        content: "{{ postgres_password.stdout }}\n"
+        owner: root
+        group: root
+        mode: "0600"
+      no_log: true
+
+    - name: Install PostgreSQL Compose configuration
+      ansible.builtin.copy:
+        src: ../files/postgres.compose.yml
+        dest: "{{ postgres_dir }}/compose.yml"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Check shared Docker backend network
+      ansible.builtin.command: docker network inspect villa-serena-backend
+      register: docker_network
+      changed_when: false
+      failed_when: false
+
+    - name: Create shared internal Docker backend network
+      ansible.builtin.command: docker network create villa-serena-backend
+      when: docker_network.rc != 0
+      changed_when: true
+
+    - name: Start PostgreSQL without changing application containers
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - --project-name
+          - villa-serena-db
+          - --file
+          - "{{ postgres_dir }}/compose.yml"
+          - up
+          - -d
+          - --no-build
+      register: compose_result
+      changed_when: "'Started' in compose_result.stderr or 'Created' in compose_result.stderr or 'Recreated' in compose_result.stderr"
