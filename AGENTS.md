@@ -1,5 +1,18 @@
 # AGENTS.md — Reglas para la IA en los repositorios de Villa Serena
 
+## Ponytail
+
+Para trabajar en este repositorio, usa Ponytail en modo `full` por defecto y lee
+[su skill principal](.agents/skills/ponytail/SKILL.md) antes de actuar. Si la persona
+lo desactiva o cambia el nivel, respeta esa elección durante la sesión.
+
+Ponytail complementa estos acuerdos: prevalecen las instrucciones de la persona,
+las reglas específicas del proyecto y la comunicación en español, también en las
+revisiones y auditorías. No elimina capas, interfaces o controles acordados por
+reducir código. Las skills de revisión y auditoría producen informes; no autorizan
+cambios adicionales. La [guía local](.agents/README.md) explica su uso, procedencia
+y diferencias respecto al plugin personal.
+
 > Copia este archivo en la raíz de **cada uno de los 5 repositorios**. Las herramientas de IA (Claude Code, Codex, Copilot, Cursor) lo leen como instrucciones del proyecto. Si tu herramienta usa otro nombre (por ejemplo, `CLAUDE.md`), crea una copia con ese nombre.
 
 ---
