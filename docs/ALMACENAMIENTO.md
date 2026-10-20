@@ -48,7 +48,7 @@ referencias se describe en «Fotos de habitaciones».
 
 Ambos usan el backend R2 ya existente, con el perfil `r2-terraform`. Los proveedores y sus versiones se reutilizan de la configuración existente; sus locks se conservan. Cada directorio necesita su inicialización local. El bucket `villa-serena-terraform-state` no guarda archivos de la aplicación y no se modifica su definición.
 
-Los buckets tienen `prevent_destroy`; S3 usa también `force_destroy=false`, acceso público bloqueado, propietario de bucket obligatorio y HTTPS. No se crean usuarios IAM ni claves AWS permanentes. CloudFront solo puede leer el bucket de assets públicos de esa distribución; no puede leer facturas ni incidencias. El rol EC2 puede leer/escribir el bucket privado, consultar su existencia y borrar únicamente objetos de comprobación bajo `_checks/`.
+Los buckets tienen `prevent_destroy`; S3 usa también `force_destroy=false`, acceso público bloqueado, propietario de bucket obligatorio y HTTPS. No se crean usuarios IAM ni claves AWS permanentes. CloudFront solo puede leer el bucket de assets públicos de esa distribución; no puede leer facturas ni incidencias. El rol EC2 puede leer/escribir el bucket privado, consultar su existencia y borrar únicamente objetos de comprobación bajo `_checks/`. Para el catálogo, una política independiente permite GET/PUT exclusivamente bajo `tipos/` del bucket de assets.
 
 ## 1. Preparar R2 para pruebas locales
 
@@ -152,6 +152,43 @@ El API actual guarda referencias públicas; no crea ni sube automáticamente fot
 CORS solo permite GET/HEAD desde los orígenes configurados; las cargas pasan por backend u operador. No se habilitan cargas anónimas del navegador.
 
 ### Fotos de habitaciones: publicación y uso en la web
+
+Actualización IAM aplicada el 2026-10-20 UTC: **1 política creada, 0 recursos
+modificados y 0 eliminados**. El plan posterior confirmó `No changes`. Pasaron
+las 14 comprobaciones de IAM Simulator; una foto preexistente siguió respondiendo
+`200` por CloudFront y `403` por S3 anónimo. No se probó aún la carga desde ADMIN.
+
+El rol `villa-serena-prod-ec2-role` recibe la política
+`villa-serena-api-room-type-photos`: `s3:PutObject` y `s3:GetObject` únicamente
+sobre `BUCKET_PUBLICO/tipos/*`. La salida Terraform `room_type_photos_prefix`
+publica `tipos/`, coherente con las claves de tipo de habitación del contrato.
+El API debe generar claves nuevas bajo ese prefijo; no puede escribir en
+`images/catalogo-aprobado/`, donde están las fotos prepublicadas por el operador,
+ni en otros prefijos públicos. No se conceden listado, borrado, administración de versiones ni ACL
+del bucket público; la política privada anterior permanece separada.
+
+`GetObject` permite HEAD de objetos existentes para comprobar asociaciones.
+Sin `ListBucket`, S3 puede responder `403` para una clave inexistente: el backend
+debe contemplar esta semántica sin asumir que todo `403` equivale a `404`.
+Referencia: [permisos de HeadObject](https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html).
+
+Este permiso habilita al proceso del API, no al navegador ni al rol funcional
+ADMIN. La autorización ADMIN, validación de imágenes y persistencia de su galería
+se implementan en [API #82](https://github.com/villaserenaguatee/villa-serena-api/issues/82).
+No hace falta reiniciar EC2 o desplegar el API para actualizar IAM; comprobar la
+carga desde la aplicación sigue siendo una tarea separada.
+
+Para comprobar los permisos efectivos y sus límites, desde la raíz de infra:
+
+```bash
+python3 scripts/check_room_type_photo_permissions.py
+```
+
+Requiere el backend inicializado, Terraform, AWS CLI y una identidad de operador
+con `iam:GetRole` e `iam:SimulatePrincipalPolicy`. Ejecuta 14 simulaciones de
+acciones permitidas y denegadas, incluyendo el acceso privado existente; no sube
+objetos. IAM Simulator no sustituye una carga real desde el API ni evalúa todas
+las restricciones externas, como políticas de recursos o de la organización.
 
 Las fotos se publican con una identidad AWS de operador. La web recibe únicamente
 la URL HTTPS de CloudFront; no necesita credenciales AWS ni acceso al bucket.
