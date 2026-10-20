@@ -2,7 +2,42 @@
 
 Decisión: retirar MinIO. `local` mínimo del API conserva su adaptador privado en PostgreSQL; `dev` prueba R2 real desde la computadora y `prod` utiliza S3. Mailpit permanece para correo local. Los tres perfiles y sus comandos están en [ENTORNOS del API](https://github.com/villaserenaguatee/villa-serena-api/blob/dev/docs/ENTORNOS.md).
 
-El código Terraform de esta tarea prepara recursos; escribirlo o validarlo **no demuestra que se hayan creado**. `init -backend=false` y `validate` no aprovisionan. Revisa siempre `plan` antes de `apply`.
+Escribir o validar Terraform **no demuestra que se hayan creado recursos**. `init -backend=false` y `validate` no aprovisionan. Revisa siempre `plan` antes de `apply`. AWS ya se aplicó y comprobó según el registro siguiente; `cloudflare/storage` no se ejecutó en ese aprovisionamiento.
+
+## Aprovisionamiento AWS verificado — 2026-10-20 UTC
+
+Se aplicó el plan de `aws/storage` con el proveedor AWS y backend R2 existentes:
+**20 recursos creados, 0 modificados y 0 eliminados**. El plan posterior confirmó
+`No changes`. No se recrearon EC2, su rol ni la red.
+
+| Salida | Valor |
+|---|---|
+| Región | `us-east-1` |
+| Bucket de fotos públicas vía CDN | `villa-serena-prod-public-291723764646-us-east-1` |
+| Bucket privado del API | `villa-serena-prod-private-291723764646-us-east-1` |
+| CloudFront (`Deployed`, habilitado) | `E1ZDTM6THJAMS0` |
+| URL pública de assets | `https://d13s29erv78l4g.cloudfront.net` |
+| Rol EC2 existente | `villa-serena-prod-ec2-role` |
+
+Se publicaron las 17 fotos aprobadas de `web/public/images/catalogo-aprobado/`
+bajo `images/catalogo-aprobado/`, sin borrar archivos ni objetos anteriores.
+Para las 17 se comprobó HTTP `200` por CloudFront, SHA-256 idéntico al original y
+HTTP `403` anónimo directo en S3. También se verificaron redirección HTTP → HTTPS,
+CORS para `https://web.villaserenaguate.lat`, tipo JPEG, caché inmutable, cifrado
+AES256, versionado y los cuatro bloqueos de acceso público del bucket.
+
+Foto de ejemplo lista para consumir:
+
+```text
+https://d13s29erv78l4g.cloudfront.net/images/catalogo-aprobado/a27a019011086cef.jpg
+```
+
+Para producción, la salida de URL corresponde a
+`ARCHIVOS_URL_PUBLICA=https://d13s29erv78l4g.cloudfront.net`. Para mostrar estas
+fotos, la web solo necesita su URL pública, sin credenciales AWS ni configurar el
+nombre del bucket. En este paso no se modificaron
+parámetros SSM, datos del API, código web ni sus despliegues; la actualización de
+referencias se describe en «Fotos de habitaciones».
 
 ## Qué administra cada directorio
 
@@ -115,6 +150,43 @@ El API actual guarda referencias públicas; no crea ni sube automáticamente fot
 - Guarda las URLs bajo `public_assets_url` con la clave del objeto, por ejemplo `.../hotel/fachada.jpg`. Configurar la URL base no sustituye objetos ni reescribe URLs absolutas existentes. Prefiere claves nuevas al reemplazar imágenes para evitar caché antigua de CloudFront.
 
 CORS solo permite GET/HEAD desde los orígenes configurados; las cargas pasan por backend u operador. No se habilitan cargas anónimas del navegador.
+
+### Fotos de habitaciones: publicación y uso en la web
+
+Las fotos se publican con una identidad AWS de operador. La web recibe únicamente
+la URL HTTPS de CloudFront; no necesita credenciales AWS ni acceso al bucket.
+El API actual admite referencias públicas, pero no tiene un endpoint de subida de
+fotos de habitaciones: `/api/v1/archivos/imagenes` admite solamente incidencias.
+
+Desde la raíz de infra, con el checkout de web en una carpeta hermana, revisa
+primero las operaciones previstas. Sustituye `BUCKET_PUBLICO` por la salida
+`public_bucket` y adapta la ruta si los repositorios están en otra ubicación:
+
+```bash
+aws s3 sync ../web/public/images/catalogo-aprobado/ s3://BUCKET_PUBLICO/images/catalogo-aprobado/ --region us-east-1 --exclude '*' --include '*.jpg' --cache-control 'public,max-age=31536000,immutable' --dryrun
+# Después de revisar las cargas, repite sin --dryrun.
+```
+
+No añadas `--delete`: publicar fotos nuevas no debe borrar las anteriores.
+Los nombres deben cambiar al reemplazar el contenido, ya que se cachean como
+inmutables durante un año. Subir una foto no registra automáticamente una oferta
+ni modifica referencias del API o la web.
+
+Comprueba una foto por ambos caminos, sustituyendo los marcadores por las salidas
+y una clave publicada. Los resultados esperados son `200` vía CDN y `403` anónimo
+directo en S3:
+
+```bash
+curl -I https://DOMINIO_CLOUDFRONT/images/catalogo-aprobado/FOTO.jpg
+curl -I https://BUCKET_PUBLICO.s3.us-east-1.amazonaws.com/images/catalogo-aprobado/FOTO.jpg
+```
+
+La referencia que consume la web es
+`public_assets_url + /images/catalogo-aprobado/FOTO.jpg`. En páginas conectadas al
+API, guarda/consume esa URL en el catálogo correspondiente. Las páginas que aún
+usan `/images/catalogo-aprobado/...` o Unsplash necesitan actualizar sus
+referencias en una PR de web antes de retirar los archivos locales. Crear el CDN
+no cambia esas páginas ni sus despliegues.
 
 ## 4. Retirar la instalación anterior
 
