@@ -58,9 +58,9 @@ PMS (sistema de administración hotelera) para el hotel boutique **ficticio** "V
 ## 6. Sección por repositorio
 
 ### villa-serena-infra
-- Contiene `docker-compose.dev.yml` (PostgreSQL 17, Mailpit, MinIO, Prometheus y Grafana), la configuración de Prometheus, el tablero de Grafana y `.env.example`.
+- Contiene `docker-compose.dev.yml` (PostgreSQL 17, Mailpit, Prometheus y Grafana), la configuración de Prometheus, el tablero de Grafana y `.env.example`.
 - Comando: `docker compose -f docker-compose.dev.yml up -d`.
-- No agregues el API, la web ni la app a Docker en el hito: corren en la computadora de cada integrante.
+- El API tiene Compose propios para `local` y `dev`; no ejecutes ambos stacks sobre los mismos puertos. R2 remoto para `dev` y S3 para `prod` se preparan según `docs/ALMACENAMIENTO.md`. MinIO se retira.
 
 ### villa-serena-api
 - Spring Boot 4.1, paquete raíz `gt.villaserena`, módulos según el documento 14 (sección 7).

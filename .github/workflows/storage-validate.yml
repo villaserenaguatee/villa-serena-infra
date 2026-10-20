@@ -1,0 +1,32 @@
+name: Storage validation
+on:
+  pull_request:
+    paths: ["cloudflare/storage/**", "aws/storage/**", ".github/workflows/storage-validate.yml", "docker-compose.dev.yml"]
+  push:
+    branches: [main]
+    paths: ["cloudflare/storage/**", "aws/storage/**", ".github/workflows/storage-validate.yml", "docker-compose.dev.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        root: [cloudflare/storage, aws/storage]
+    defaults:
+      run:
+        working-directory: ${{ matrix.root }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.13.4"
+      - run: terraform fmt -check -recursive -diff
+      - run: terraform init -backend=false -input=false -lockfile=readonly
+      - run: terraform validate -no-color
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose --env-file .env.example -f docker-compose.dev.yml config --quiet
