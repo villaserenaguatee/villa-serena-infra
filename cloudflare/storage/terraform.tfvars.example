@@ -1,0 +1,5 @@
+# Non-secret identifiers. Tokens and S3 keys never belong in this file.
+cloudflare_account_id = "REPLACE_WITH_ACCOUNT_ID"
+cloudflare_zone_id    = "REPLACE_WITH_ZONE_ID"
+public_assets_domain = "assets-dev.villaserenaguate.lat"
+allowed_origins      = ["http://localhost:3000"]

@@ -54,7 +54,7 @@ Si utilizas IA, dale la issue y las referencias necesarias, revisa su propuesta 
 ### Entorno local con Docker Compose
 
 - Para cambios al entorno local, prepara tu `.env` según el README y valida la configuración con `docker compose -f docker-compose.dev.yml config --quiet`.
-- Levanta los servicios con `docker compose -f docker-compose.dev.yml up -d` y comprueba su estado con `docker compose -f docker-compose.dev.yml ps -a`. Verifica los servicios afectados; `minio-init` debe terminar con código 0.
+- Levanta los servicios con `docker compose -f docker-compose.dev.yml up -d` y comprueba su estado con `docker compose -f docker-compose.dev.yml ps -a`. Verifica los servicios afectados. R2 y S3 son remotos: consulta `docs/ALMACENAMIENTO.md`; ningún servicio MinIO forma parte del Compose.
 - Para cambios de monitoreo, comprueba Prometheus y Grafana con la API encendida. Registra los resultados sin publicar credenciales.
 - Conserva los datos locales al detener servicios; no uses `down -v` como parte de la validación habitual.
 
