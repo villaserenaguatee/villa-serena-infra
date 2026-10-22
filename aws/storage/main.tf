@@ -1,6 +1,10 @@
 data "aws_caller_identity" "current" {}
 data "aws_iam_role" "api" { name = var.ec2_role_name }
 
+locals {
+  room_type_photos_prefix = "tipos/"
+}
+
 resource "aws_s3_bucket" "application" {
   for_each      = toset(["public", "private"])
   bucket        = "villa-serena-prod-${each.key}-${data.aws_caller_identity.current.account_id}-${var.aws_region}"
@@ -163,4 +167,18 @@ resource "aws_iam_role_policy" "api" {
   name   = "villa-serena-api-private-storage"
   role   = data.aws_iam_role.api.id
   policy = data.aws_iam_policy_document.api.json
+}
+
+data "aws_iam_policy_document" "room_type_photos" {
+  statement {
+    sid       = "ReadAndWriteRoomTypePhotos"
+    actions   = ["s3:GetObject", "s3:PutObject"]
+    resources = ["${aws_s3_bucket.application["public"].arn}/${local.room_type_photos_prefix}*"]
+  }
+}
+
+resource "aws_iam_role_policy" "room_type_photos" {
+  name   = "villa-serena-api-room-type-photos"
+  role   = data.aws_iam_role.api.id
+  policy = data.aws_iam_policy_document.room_type_photos.json
 }
