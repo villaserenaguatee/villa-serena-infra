@@ -1,7 +1,7 @@
 # Dedicated deployment identity; only main may assume this role.
 data "aws_iam_policy_document" "frontend_apply_trust" {
   statement {
-    sid     = "GitHubInfraMainOnly"
+    sid     = "GitHubInfraProtectedEnvironment"
     effect  = "Allow"
     actions = ["sts:AssumeRoleWithWebIdentity"]
 
@@ -19,7 +19,7 @@ data "aws_iam_policy_document" "frontend_apply_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:villaserenaguatee@335120540/villa-serena-infra@1389591514:ref:refs/heads/main"]
+      values   = ["repo:villaserenaguatee@335120540/villa-serena-infra@1389591514:environment:frontend-production"]
     }
   }
 }
