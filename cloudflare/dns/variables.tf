@@ -8,13 +8,11 @@ variable "zone_id" {
 }
 
 variable "web_subdomain" {
-  type        = string
-  default     = "web.villaserenaguate.lat"
-  description = "Subdomain for Vercel frontend deployment."
+  type    = string
+  default = "web.villaserenaguate.lat"
 }
 
-variable "vercel_cname_target" {
+variable "amplify_cname_target" {
   type        = string
-  default     = "cname.vercel-dns.com"
-  description = "Vercel CNAME target hostname."
+  description = "Destino CNAME exacto indicado por AWS Amplify para el subdominio web."
 }
