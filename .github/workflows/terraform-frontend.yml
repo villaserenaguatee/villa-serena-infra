@@ -54,4 +54,6 @@ jobs:
           AWS_SHARED_CREDENTIALS_FILE: ${{ runner.temp }}/r2-credentials
         run: terraform init -input=false -reconfigure
       - name: Terraform plan
+        env:
+          AWS_SHARED_CREDENTIALS_FILE: ${{ runner.temp }}/r2-credentials
         run: terraform plan -input=false -no-color
