@@ -22,4 +22,4 @@ El dominio previsto es `web.villaserenaguate.lat`. Tras crear la asociación en 
 
 ## Precaución
 
-El token de GitHub se entrega como variable efímera para evitar almacenarlo como entrada de Terraform; confirma el comportamiento de la versión del provider antes de aplicar. Amplify puede requerir permisos adicionales del token para conectar el repositorio.
+El token de GitHub se pasa mediante GitHub Secrets. Trátalo como credencial sensible y restringe el acceso al state remoto: el provider podría conservar datos sensibles en el state. Amplify puede requerir permisos adicionales del token para conectar el repositorio.
