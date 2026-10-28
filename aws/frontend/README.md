@@ -12,7 +12,7 @@ Configura los siguientes secretos en `villa-serena-infra`:
 
 Variable opcional: `AWS_REGION` (por defecto `us-east-1`).
 
-El workflow valida los cambios en PR. Ejecuta manualmente `Terraform Frontend Plan` para obtener el plan sin crear recursos.
+El workflow ejecuta `terraform fmt`, `terraform validate` y, si pasan, `terraform plan` automáticamente en cada PR y en los cambios relevantes de `main`. También permite ejecución manual.
 
 **No hay apply automático.** El despliegue y el corte DNS deben realizarse por separado para no interrumpir la web anterior.
 
