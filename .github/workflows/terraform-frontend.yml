@@ -11,6 +11,12 @@ on:
       - "aws/frontend/**"
       - ".github/workflows/terraform-frontend.yml"
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Aplicar infraestructura Amplify (solo main; requiere aprobación del entorno)'
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: read
@@ -72,3 +78,54 @@ jobs:
         env:
           AWS_SHARED_CREDENTIALS_FILE: ${{ runner.temp }}/r2-credentials
         run: terraform plan -input=false -no-color
+
+  apply:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.deploy == true
+    needs: [validate, plan]
+    runs-on: ubuntu-latest
+    environment: frontend-production
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: villa-serena-frontend-apply
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: aws/frontend
+    env:
+      TF_VAR_github_access_token: ${{ secrets.AMPLIFY_GITHUB_ACCESS_TOKEN }}
+      TF_VAR_aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.13.4"
+      - name: Verificar rol de despliegue
+        env:
+          ROLE_ARN: ${{ vars.AWS_INFRA_FRONTEND_APPLY_ROLE_ARN }}
+        run: ': "${ROLE_ARN:?Configura AWS_INFRA_FRONTEND_APPLY_ROLE_ARN}"'
+      - name: Autenticar AWS mediante OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_INFRA_FRONTEND_APPLY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+      - name: Configurar perfil R2 para backend
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          umask 077
+          printf '[r2-terraform]\\naws_access_key_id=%s\\naws_secret_access_key=%s\\n' "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" > "$RUNNER_TEMP/r2-credentials"
+      - name: Inicializar backend R2
+        env:
+          AWS_SHARED_CREDENTIALS_FILE: ${{ runner.temp }}/r2-credentials
+        run: terraform init -input=false -reconfigure
+      - name: Aplicar Terraform
+        env:
+          AWS_SHARED_CREDENTIALS_FILE: ${{ runner.temp }}/r2-credentials
+        run: terraform apply -input=false -auto-approve -no-color
+      - name: Mostrar outputs DNS
+        env:
+          AWS_SHARED_CREDENTIALS_FILE: ${{ runner.temp }}/r2-credentials
+        run: terraform output -no-color
