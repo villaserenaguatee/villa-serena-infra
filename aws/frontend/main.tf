@@ -1,8 +1,8 @@
 resource "aws_amplify_app" "web" {
-  name                 = "villa-serena-web"
-  repository           = "https://github.com/villaserenaguatee/villa-serena-web"
-  access_token         = var.github_access_token
-  platform             = "WEB_COMPUTE"
+  name                     = "villa-serena-web"
+  repository               = "https://github.com/villaserenaguatee/villa-serena-web"
+  access_token             = var.github_access_token
+  platform                 = "WEB_COMPUTE"
   enable_branch_auto_build = true
 
   build_spec = <<-YAML
