@@ -16,3 +16,8 @@ output "ansible_ssm_transfer_bucket" {
   description = "Use as the AWS_SSM_TRANSFER_BUCKET Actions variable for Ansible."
   value       = aws_s3_bucket.ansible_transfer.bucket
 }
+
+output "frontend_plan_role_arn" {
+  description = "OIDC role ARN for automatic frontend Terraform plans."
+  value       = aws_iam_role.frontend_plan.arn
+}
