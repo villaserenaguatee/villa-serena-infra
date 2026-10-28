@@ -14,11 +14,11 @@ Variable opcional: `AWS_REGION` (por defecto `us-east-1`).
 
 El workflow valida los cambios en PR. Ejecuta manualmente `Terraform Frontend Plan` para obtener el plan sin crear recursos.
 
-**No hay apply automático.** Tras revisar el plan, el despliegue debe habilitarse por separado.
+**No hay apply automático.** El despliegue y el corte DNS deben realizarse por separado para no interrumpir la web anterior.
 
 ## DNS
 
-El dominio previsto es `web.villaserenaguate.lat`. Tras crear la asociación en Amplify, configura en Cloudflare los registros de validación y del subdominio indicados por AWS. No se modifica el módulo `cloudflare/dns` hasta conocer los valores generados.
+El dominio previsto es `web.villaserenaguate.lat`. Tras crear la asociación en Amplify, configura en Cloudflare los registros de validación y del subdominio indicados por AWS. El módulo `cloudflare/dns` recibe el destino CNAME mediante `TF_VAR_amplify_cname_target`. Consulta `cloudflare/dns/README-AMPLIFY.md` antes de aplicar. Si el registro DNS ya existe, impórtalo al estado antes del apply.
 
 ## Precaución
 
