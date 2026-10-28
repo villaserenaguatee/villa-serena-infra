@@ -33,7 +33,6 @@ jobs:
       run:
         working-directory: aws/frontend
     env:
-      AWS_SHARED_CREDENTIALS_FILE: ${{ runner.temp }}/r2-credentials
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       TF_VAR_github_access_token: ${{ secrets.AMPLIFY_GITHUB_ACCESS_TOKEN }}
@@ -49,7 +48,10 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: |
           umask 077
-          printf "[r2-terraform]\\naws_access_key_id=%s\\naws_secret_access_key=%s\\n" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" > "$AWS_SHARED_CREDENTIALS_FILE"
-      - run: terraform init -input=false -reconfigure
+          printf "[r2-terraform]\naws_access_key_id=%s\naws_secret_access_key=%s\n" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" > "$RUNNER_TEMP/r2-credentials"
+      - name: Inicializar backend R2
+        env:
+          AWS_SHARED_CREDENTIALS_FILE: ${{ runner.temp }}/r2-credentials
+        run: terraform init -input=false -reconfigure
       - name: Terraform plan
         run: terraform plan -input=false -no-color
