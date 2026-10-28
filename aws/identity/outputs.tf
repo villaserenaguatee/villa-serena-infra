@@ -21,3 +21,8 @@ output "frontend_plan_role_arn" {
   description = "OIDC role ARN for automatic frontend Terraform plans."
   value       = aws_iam_role.frontend_plan.arn
 }
+
+output "frontend_apply_role_arn" {
+  description = "Role ARN for approved frontend Terraform applies from main."
+  value       = aws_iam_role.frontend_apply.arn
+}
