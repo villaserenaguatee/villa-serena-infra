@@ -33,9 +33,9 @@ jobs:
       run:
         working-directory: aws/frontend
     env:
-      AWS_SHARED_CREDENTIALS_FILE: /dev/null
-      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_SHARED_CREDENTIALS_FILE: ${{ runner.temp }}/r2-credentials
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       TF_VAR_github_access_token: ${{ secrets.AMPLIFY_GITHUB_ACCESS_TOKEN }}
       TF_VAR_aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
     steps:
@@ -43,9 +43,13 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.13.4"
-      - run: terraform init -input=false -reconfigure -backend-config="profile="
-      - name: Terraform plan
+      - name: Configurar perfil R2 para backend
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          umask 077
+          printf "[r2-terraform]\\naws_access_key_id=%s\\naws_secret_access_key=%s\\n" "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" > "$AWS_SHARED_CREDENTIALS_FILE"
+      - run: terraform init -input=false -reconfigure
+      - name: Terraform plan
         run: terraform plan -input=false -no-color
