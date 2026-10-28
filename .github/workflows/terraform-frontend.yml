@@ -116,7 +116,7 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: |
           umask 077
-          printf '[r2-terraform]\\naws_access_key_id=%s\\naws_secret_access_key=%s\\n' "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" > "$RUNNER_TEMP/r2-credentials"
+          printf '[r2-terraform]\naws_access_key_id=%s\naws_secret_access_key=%s\n' "$R2_ACCESS_KEY_ID" "$R2_SECRET_ACCESS_KEY" > "$RUNNER_TEMP/r2-credentials"
       - name: Inicializar backend R2
         env:
           AWS_SHARED_CREDENTIALS_FILE: ${{ runner.temp }}/r2-credentials
