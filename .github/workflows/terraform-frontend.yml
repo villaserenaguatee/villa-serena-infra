@@ -48,6 +48,10 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.13.4"
+      - name: Verificar ARN del rol OIDC
+        env:
+          ROLE_ARN: ${{ vars.AWS_INFRA_FRONTEND_ROLE_ARN }}
+        run: ': "${ROLE_ARN:?Configura AWS_INFRA_FRONTEND_ROLE_ARN en las variables del repositorio}"'
       - name: Autenticar AWS mediante OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
