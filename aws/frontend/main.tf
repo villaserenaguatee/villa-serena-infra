@@ -11,7 +11,11 @@ resource "aws_amplify_app" "web" {
       phases:
         preBuild:
           commands:
-            - corepack enable
+            - nvm install 24
+            - nvm use 24
+            - node --version
+            - npm install --global pnpm@12.0.0
+            - pnpm --version
             - pnpm install --frozen-lockfile
         build:
           commands:
