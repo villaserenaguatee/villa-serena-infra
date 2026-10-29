@@ -8,3 +8,14 @@
 6. Verificar el estado del dominio en Amplify y la respuesta HTTPS antes de retirar el despliegue anterior.
 
 El estado de `cloudflare/dns` todavía no existe. No ejecutar apply a ciegas si el registro DNS ya existe.
+
+### Registro de validación del certificado (Terraform)
+
+El recurso `cloudflare_dns_record.amplify_certificate_validation[0]` se crea al definir **ambas** variables:
+
+- `TF_VAR_certificate_validation_name`: nombre completo CNAME mostrado en `domain_verification_dns_record` del output de `aws/frontend` (separar nombre y destino del registro).
+- `TF_VAR_certificate_validation_target`: destino completo CNAME del mismo output.
+
+Los valores deben copiarse exactamente de AWS; no deducirlos del dominio predeterminado. El registro debe ser **DNS only** (sin proxy), al igual que el CNAME web.
+
+Si alguno de los registros ya existe en Cloudflare, importarlo primero al estado Terraform, sin crear duplicados. Para el recurso opcional, usar la dirección `cloudflare_dns_record.amplify_certificate_validation[0]`. Antes de aplicar, confirmar que el plan no destruya registros existentes inesperadamente.

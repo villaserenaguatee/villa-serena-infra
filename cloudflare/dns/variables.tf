@@ -16,3 +16,15 @@ variable "amplify_cname_target" {
   type        = string
   description = "Destino CNAME exacto indicado por AWS Amplify para el subdominio web."
 }
+
+variable "certificate_validation_name" {
+  type        = string
+  description = "Nombre CNAME de validación de certificado que entrega AWS Amplify, sin modificar."
+  default     = ""
+}
+
+variable "certificate_validation_target" {
+  type        = string
+  description = "Destino CNAME de validación de certificado que entrega AWS Amplify, sin modificar."
+  default     = ""
+}
