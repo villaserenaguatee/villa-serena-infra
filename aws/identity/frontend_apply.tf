@@ -61,6 +61,12 @@ data "aws_iam_policy_document" "frontend_apply" {
     ]
     resources = ["*"]
   }
+
+  statement {
+    sid       = "DiscoverRoute53HostedZonesForAmplify"
+    actions   = ["route53:ListHostedZones"]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "frontend_apply" {
